@@ -60,6 +60,9 @@ The platform consists of:
 
 ![Database Schema](https://raw.githubusercontent.com/carlitosmanuelitos/Portfolio_tracker/21bc6490727e3972b847924412558245df199180/Design%20Documents/diagrams/png/database-schema.png)
 
+Relationships are one-to-many: a User has many Holdings and Transactions. The Holding–Stock and Transaction–Stock relations associate records with stock symbols/instruments. (This is analogous to standard portfolio models: “an account can place many trades and an instrument can participate in many trades, but a trade is always associated with only one account and one instrument”​
+datastax.com For example, a simplified ERD might include tables Users, Holdings, Transactions, Snapshots, and Stocks, with foreign keys linking holdings/transactions/snapshots to the user and stock tables. (Derived attributes like portfolio value or sector totals are computed at runtime or in snapshots; they need not be stored.) The design follows standard portfolio data modeling principles.
+
 **Key Database Tables**:
 - **User**: Stores authentication data such as username and password hash.
 - **Holding**: Represents a user's stock holdings, including ticker, shares owned, purchase price, and the corresponding stock's data (linked to the Stock table).
