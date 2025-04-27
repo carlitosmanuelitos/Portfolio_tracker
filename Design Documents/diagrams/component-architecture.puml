@@ -1,0 +1,36 @@
+@startuml component-architecture
+
+package "SmartStock API Backend (Django + DRF)" {
+    [Authentication Module] --> [User Model]
+    [Portfolio Service] --> [Holdings Table]
+    [Portfolio Service] --> [Transactions Table]
+    [Portfolio Service] --> [Snapshots Table]
+    [Stock Service] --> [External APIs\n(Finnhub, yfinance)]
+    [Stock Service] --> [Stock Cache (Memory)]
+    [News Service] --> [External APIs\n(Finnhub News)]
+    [AI Advisor Module] --> [Holdings Table]
+    [AI Advisor Module] --> [OpenAI API]
+    [Database Access Layer] --> [SQLite Database]
+}
+
+rectangle "SmartStock Web Frontend (React.js)" {
+    [Dashboard Page]
+    [Portfolio Page]
+    [Market Overview Page]
+    [News Feed Page]
+    [AI Advisor Page]
+}
+
+User --> [Dashboard Page]
+User --> [Portfolio Page]
+User --> [Market Overview Page]
+User --> [News Feed Page]
+User --> [AI Advisor Page]
+
+[Dashboard Page] --> [Portfolio Service]
+[Portfolio Page] --> [Portfolio Service]
+[Market Overview Page] --> [Stock Service]
+[News Feed Page] --> [News Service]
+[AI Advisor Page] --> [AI Advisor Module]
+
+@enduml
