@@ -1,0 +1,477 @@
+openapi: 3.0.0
+info:
+  title: SmartStock API
+  description: API documentation for the SmartStock project
+  version: 1.0.0
+
+servers:
+  - url: https://api.smartstock.com
+    description: Production server
+
+paths:
+  /api/v1/holdings:
+    get:
+      summary: List all current stock holdings
+      tags:
+        - Holdings
+      responses:
+        '200':
+          description: A list of stock holdings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Holding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/transactions:
+    post:
+      summary: Create a new transaction (buy/sell)
+      tags:
+        - Transactions
+      requestBody:
+        description: Transaction details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    get:
+      summary: List all transactions (paginated)
+      tags:
+        - Transactions
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: A paginated list of transactions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTransactions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/api/v1/holdings/{symbol}':
+    delete:
+      summary: Delete a holding by stock symbol
+      tags:
+        - Holdings
+      parameters:
+        - name: symbol
+          in: path
+          description: Stock symbol of the holding to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Holding deleted successfully (no content)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/portfolio/value-history:
+    get:
+      summary: Get portfolio value history
+      tags:
+        - Portfolio
+      parameters:
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Portfolio value history (list of snapshots)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioSnapshot'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/stocks/search:
+    get:
+      summary: Search for stocks by query
+      tags:
+        - Stocks
+      parameters:
+        - $ref: '#/components/parameters/QueryParam'
+      responses:
+        '200':
+          description: A list of matching stocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stock'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/api/v1/stocks/{symbol}/history':
+    get:
+      summary: Get historical price data for a stock symbol
+      tags:
+        - Stocks
+      parameters:
+        - name: symbol
+          in: path
+          description: Stock symbol to retrieve history for
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Historical price data for the stock
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockPriceHistory'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/api/v1/stocks/{symbol}/stats':
+    get:
+      summary: Get statistics for a stock symbol
+      tags:
+        - Stocks
+      parameters:
+        - name: symbol
+          in: path
+          description: Stock symbol to retrieve statistics for
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stock statistics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockStats'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/news:
+    get:
+      summary: List news items (paginated)
+      tags:
+        - News
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: A paginated list of news items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNews'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Holding:
+      type: object
+      properties:
+        symbol:
+          type: string
+        quantity:
+          type: number
+        average_price:
+          type: number
+        current_price:
+          type: number
+        total_value:
+          type: number
+      required:
+        - symbol
+        - quantity
+        - average_price
+        - current_price
+        - total_value
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        type:
+          type: string
+          description: Transaction type (buy or sell)
+          enum:
+            - buy
+            - sell
+        quantity:
+          type: number
+        price:
+          type: number
+        date:
+          type: string
+          format: date-time
+      required:
+        - id
+        - symbol
+        - type
+        - quantity
+        - price
+        - date
+
+    TransactionInput:
+      type: object
+      properties:
+        symbol:
+          type: string
+        type:
+          type: string
+          description: Transaction type (buy or sell)
+          enum:
+            - buy
+            - sell
+        quantity:
+          type: number
+        price:
+          type: number
+        date:
+          type: string
+          format: date-time
+      required:
+        - symbol
+        - type
+        - quantity
+        - price
+        - date
+
+    PortfolioSnapshot:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        total_value:
+          type: number
+      required:
+        - date
+        - total_value
+
+    Stock:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+      required:
+        - symbol
+        - name
+
+    StockPriceHistory:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: integer
+      required:
+        - date
+        - open
+        - high
+        - low
+        - close
+        - volume
+
+    StockStats:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        current_price:
+          type: number
+        market_cap:
+          type: number
+        pe_ratio:
+          type: number
+        dividend_yield:
+          type: number
+        week52_high:
+          type: number
+        week52_low:
+          type: number
+      required:
+        - symbol
+        - name
+        - current_price
+        - market_cap
+        - pe_ratio
+        - dividend_yield
+        - week52_high
+        - week52_low
+
+    NewsItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        url:
+          type: string
+          format: uri
+        published_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - published_at
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    PaginatedTransactions:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+      required:
+        - count
+        - results
+
+    PaginatedNews:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NewsItem'
+      required:
+        - count
+        - results
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number (pagination)
+      schema:
+        type: integer
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        default: 10
+    StartDateParam:
+      name: start_date
+      in: query
+      description: Start date for filtering (inclusive, format YYYY-MM-DD)
+      schema:
+        type: string
+        format: date
+    EndDateParam:
+      name: end_date
+      in: query
+      description: End date for filtering (inclusive, format YYYY-MM-DD)
+      schema:
+        type: string
+        format: date
+    QueryParam:
+      name: query
+      in: query
+      description: Search query string
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
