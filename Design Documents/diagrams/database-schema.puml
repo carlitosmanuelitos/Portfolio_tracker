@@ -1,0 +1,54 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) <i>x</i>
+
+entity User {
+    primary_key(id): INTEGER
+    username: VARCHAR
+    email: VARCHAR
+    password_hash: VARCHAR
+    date_joined: DATETIME
+}
+
+entity Holding {
+    primary_key(id): INTEGER
+    foreign_key(user_id): INTEGER
+    foreign_key(stock_symbol): VARCHAR
+    quantity: FLOAT
+    avg_purchase_price: FLOAT
+    last_price: FLOAT
+}
+
+entity Transaction {
+    primary_key(id): INTEGER
+    foreign_key(user_id): INTEGER
+    foreign_key(stock_symbol): VARCHAR
+    type: ENUM("BUY", "SELL")
+    quantity: FLOAT
+    price: FLOAT
+    date: DATETIME
+}
+
+entity Snapshot {
+    primary_key(id): INTEGER
+    foreign_key(user_id): INTEGER
+    date: DATE
+    total_value: FLOAT
+}
+
+entity Stock {
+    primary_key(symbol): VARCHAR
+    company_name: VARCHAR
+    sector: VARCHAR
+    exchange: VARCHAR
+}
+
+' Relationships
+User ||--o{ Holding : owns >
+User ||--o{ Transaction : records >
+User ||--o{ Snapshot : captures >
+
+Stock ||--o{ Holding : "describes >"
+Stock ||--o{ Transaction : "relates to >"
+@enduml
