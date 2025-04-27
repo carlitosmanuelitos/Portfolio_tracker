@@ -274,3 +274,36 @@ SmartStock relies on **Finnhub.io** for real-time financial data (stock quotes, 
 --- 
 
 This concludes the API design for SmartStock’s stock tracking system. It simplifies the requirements to the essentials for a POC while integrating with external APIs to provide stock data and portfolio tracking features.
+
+
+# Security Considerations
+
+Although SmartStock is a local/hobby app, standard security best practices should apply:
+
+- **HTTPS**: All API endpoints must be served over HTTPS (even localhost with a self-signed cert) so that any credentials or API keys in transit are encrypted. [OWASP HTTPS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTTPS_Cheat_Sheet.html).
+  
+- **API Keys Management**: Finnhub API keys (and any other secrets) must be kept out of source code and stored in environment variables or a secure vault. The server should never expose these keys to the client.
+
+- **Input Validation**: All inputs (API request payloads) should be validated and sanitized to prevent injection attacks. For example, symbol strings or numeric quantities should be checked before use.
+
+- **Rate Limiting**: Implement server-side throttling to prevent abuse (e.g., too many transactions or lookups). Also, abide by external API rate limits (cache results and queue excess requests).
+
+- **Error Handling**: Do not leak internal errors or stack traces in API responses. Use proper HTTP status codes and messages.
+
+For example, the [OWASP REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) recommends that REST endpoints enforce HTTPS to protect API keys and tokens in transit. Given the personal nature of financial data, securing the API is crucial even for a free app.
+
+---
+
+# Scalability and Performance
+
+SmartStock is intended as a local/personal app, so it will not have massive scale demands. However, some design choices can improve performance and future scalability:
+
+- **Caching**: Cache external API calls. For example, stock price and news data that changes daily can be stored in Redis or the database with a timestamp, reducing calls to Finnhub/Yahoo.
+
+- **Pagination and Filtering**: For endpoints that may return many records (like news or long transaction histories), implement pagination.
+
+- **Horizontal Scaling (future)**: If deployed to more users or a server environment, the frontend and API can be containerized (e.g., Docker). The backend can be scaled horizontally behind a load balancer. The database can be replicated or moved to a cloud DB service for reliability.
+
+- **Database Indexes**: Ensure indexes on commonly queried fields (e.g. user_id, date in snapshots). For example, querying snapshot by date to build the chart should be fast.
+
+The design is stateless and modular: any number of backend instances can be added if needed. Cached and scheduled data reduce real-time load, and modern databases like PostgreSQL can handle moderate data volumes easily.
