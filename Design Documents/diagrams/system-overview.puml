@@ -1,0 +1,15 @@
+@startuml system-overview
+
+actor User as "Investor"
+
+rectangle "SmartStock Web Frontend\n(React.js SPA)" as Frontend
+rectangle "SmartStock API Backend\n(Django + DRF)" as Backend
+database "SQLite Database" as Database
+cloud "External APIs\n(Finnhub / yfinance)" as ExternalAPI
+
+User --> Frontend : Interacts via browser
+Frontend --> Backend : Sends API requests (HTTPS)
+Backend --> Database : Stores/retrieves portfolio data
+Backend --> ExternalAPI : Fetches stock prices, news
+
+@enduml
