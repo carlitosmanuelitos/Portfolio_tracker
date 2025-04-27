@@ -64,11 +64,11 @@ Relationships are one-to-many: a User has many Holdings and Transactions. The Ho
 datastax.com For example, a simplified ERD might include tables Users, Holdings, Transactions, Snapshots, and Stocks, with foreign keys linking holdings/transactions/snapshots to the user and stock tables. (Derived attributes like portfolio value or sector totals are computed at runtime or in snapshots; they need not be stored.) The design follows standard portfolio data modeling principles.
 
 **Key Database Tables**:
-- **User**: Stores authentication data such as username and password hash.
-- **Holding**: Represents a user's stock holdings, including ticker, shares owned, purchase price, and the corresponding stock's data (linked to the Stock table).
-- **Transaction**: Records buy/sell transactions made by users, including stock ticker, number of shares, and price at the time of the transaction.
-- **Snapshot**: Daily records of portfolio valuation, allowing the system to visualize portfolio value over time.
-- **Stock**: Static data about stocks, such as company name, ticker symbol, and other relevant metrics fetched from the external APIs (cached for performance).
+**User**: (id, name, email, etc.) – A user may have one portfolio.
+**Holding**: (id, user_id, symbol, quantity, avg_price, last_price) – A holding record for each stock the user owns. Each Holding belongs to one User​.
+**Transaction**: (id, user_id, symbol, type [“BUY”/“SELL”], quantity, price, date) – A record of each buy/sell operation. Each Transaction is tied to one User and one stock symbol​. Buying increases a Holding (or creates one), selling decreases it.
+**Snapshot**: (date, user_id, total_value) – Daily snapshot of the portfolio’s total value for trend analysis. Each Snapshot belongs to one User (or portfolio).
+**Stock** (optional cache): (symbol, company_name, sector, exchange, etc.) – Static company info to avoid repeated lookups. Each Holding or Transaction refers to one Stock.
 
 ### Local Hosting & Dependency Management
 
