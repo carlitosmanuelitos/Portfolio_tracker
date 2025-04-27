@@ -115,150 +115,23 @@ The API follows RESTful conventions and all responses use JSON.
 
 ## 2.1. Endpoints Overview
 
-| **Method** | **Endpoint**                          | **Description**                                                                                 | **Request Payload**                                                                                         | **Response Example**                                                                                                                                                                                               |
-|------------|---------------------------------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **GET**    | `/api/holdings`                       | Retrieve current stock holdings for the user.                                                     | None                                                                                                      | ```json [{"symbol": "AAPL", "quantity": 10, "avgPrice": 145.20, "lastPrice": 150.30}, {"symbol": "MSFT", "quantity": 5, "avgPrice": 300.00, "lastPrice": 310.50}]```                                                |
-| **POST**   | `/api/transactions`                   | Record a buy/sell transaction. Updates the user's holdings accordingly.                          | `{ "symbol": "AAPL", "type": "BUY", "quantity": 5, "price": 155.00, "date": "2025-04-27" }`                 | ```json { "transaction": { "symbol": "AAPL", "type": "BUY", "quantity": 5, "price": 155.00, "date": "2025-04-27" }, "updatedHolding": { "symbol": "AAPL", "quantity": 15, "avgPrice": 148.67 } }``` |
-| **DELETE** | `/api/holdings/{symbol}`              | Delete a holding by symbol or POST a sell transaction.                                           | None (symbol to delete in URL)                                                                             | ```json { "message": "Holding deleted successfully." }```                                                                                                                                 |
-| **GET**    | `/api/portfolio/value-history`        | Retrieve the portfolio value history for charting.                                                | None                                                                                                      | ```json [{"date": "2025-04-20", "totalValue": 15000.00}, {"date": "2025-04-21", "totalValue": 15230.50}, {"date": "2025-04-27", "totalValue": 15510.75}]```                                                        |
-| **GET**    | `/api/stocks/search?query={query}`     | Search for stocks by name or symbol (using Finnhub symbol lookup).                               | `{ "query": "AAPL" }`                                                                                      | ```json [{"symbol": "TSLA", "name": "Tesla Inc", "exchange": "NASDAQ"}, {"symbol": "AAPL", "name": "Apple Inc", "exchange": "NASDAQ"}]```                                                           |
-| **GET**    | `/api/stocks/{symbol}/history?range=1y`| Retrieve historical price data for a stock symbol (e.g., 1-year range).                           | None                                                                                                      | ```json { "symbol": "AAPL", "history": [["2024-04-01", 170.0], ["2024-04-02", 172.5], ...] }```                                                                 |
-| **GET**    | `/api/stocks/{symbol}/stats`          | Retrieve stock statistics such as market cap, P/E ratio, and sector.                             | None                                                                                                      | ```json { "symbol": "AAPL", "marketCap": 2500000000000, "peRatio": 28.4, "sector": "Technology" }```                                                         |
-| **GET**    | `/api/news`                           | Get the latest news headlines/snippets for all symbols in the user's portfolio.                  | None                                                                                                      | ```json [{ "symbol": "AAPL", "headline": "Apple releases new iPhone model", "snippet": "Apple unveiled...", "url": "...", "datetime": "2025-04-25T10:00Z" }, { "symbol": "MSFT", "headline": "Microsoft reports record revenue", "snippet": "Microsoft Corp announced...", "url": "...", "datetime": "2025-04-25T11:00Z" }]```|
+All endpoints are now versioned under `/api/v1/`, support pagination and filtering where appropriate, and follow JSON request/response conventions.
+
+| **Method** | **Endpoint**                                             | **Description**                                                                                         | **Request Payload / Query Params**                                                                                                                        | **Response Example**                                                                                                                                                                                                     |
+|------------|----------------------------------------------------------|---------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **GET**    | `/api/v1/holdings`                                       | Retrieve current stock holdings for the user.                                                            | None                                                                                                                                                      | ```json\n[ { "symbol": "AAPL", "quantity": 10, "avgPrice": 145.20, "lastPrice": 150.30 }, { "symbol": "MSFT", "quantity": 5, "avgPrice": 300.00, "lastPrice": 310.50 } ]```                                            |
+| **POST**   | `/api/v1/transactions`                                   | Record a buy or sell transaction; updates the user's holdings accordingly.                               | ```json\n{ "symbol": "AAPL", "type": "BUY", "quantity": 5, "price": 155.00, "date": "2025-04-27" }```                                                        | ```json\n{ "transaction": { "symbol": "AAPL", "type": "BUY", "quantity": 5, "price": 155.00, "date": "2025-04-27" }, "updatedHolding": { "symbol": "AAPL", "quantity": 15, "avgPrice": 148.67 } }```                         |
+| **DELETE** | `/api/v1/holdings/{symbol}`                              | Delete a holding by symbol (or use POST `/transactions` with `"type":"SELL"` to reduce quantity).       | None (symbol in URL)                                                                                                                                      | ```json\n{ "message": "Holding deleted successfully." }```                                                                                                                                                               |
+| **GET**    | `/api/v1/transactions?page={page}&per_page={n}`          | List past transactions, paginated.                                                                      | Query params: `page` (default 1), `per_page` (default 20)                                                                                                  | ```json\n[ { "symbol":"AAPL","type":"BUY","quantity":5,"price":155.00,"date":"2025-04-27" }, … ]```                                                                                                                        |
+| **GET**    | `/api/v1/portfolio/value-history?start={YYYY-MM-DD}&end={YYYY-MM-DD}` | Retrieve portfolio total value over time (optionally filter by date range).                             | Query params: `start`, `end` (both optional)                                                                                                              | ```json\n[ { "date":"2025-04-20","totalValue":15000.00 }, { "date":"2025-04-27","totalValue":15510.75 } ]```                                                                                                             |
+| **GET**    | `/api/v1/stocks/search?query={query}`                    | Search for stocks by company name or ticker.                                                             | Query param: `query`                                                                                                                                    | ```json\n[ { "symbol":"TSLA","name":"Tesla Inc","exchange":"NASDAQ" }, { "symbol":"AAPL","name":"Apple Inc","exchange":"NASDAQ" } ]```                                                                                      |
+| **GET**    | `/api/v1/stocks/{symbol}/history?range={1m|3m|1y|ytd}`    | Retrieve historical price data for a stock symbol over a specified range.                                | Query param: `range` (e.g. `1m`, `3m`, `1y`, `ytd`)                                                                                                        | ```json\n{ "symbol":"AAPL","history":[ ["2024-04-01",170.0],["2024-04-02",172.5], … ] }```                                                                                                                                        |
+| **GET**    | `/api/v1/stocks/{symbol}/stats`                          | Retrieve key stock statistics (market cap, P/E ratio, sector, etc.).                                     | None                                                                                                                                                      | ```json\n{ "symbol":"AAPL","marketCap":2500000000000,"peRatio":28.4,"sector":"Technology" }```                                                                                                                              |
+| **GET**    | `/api/v1/news?page={page}&per_page={n}`                  | Get latest news headlines/snippets for all symbols in the user's portfolio, paginated.                  | Query params: `page` (default 1), `per_page` (default 20)                                                                                                  | ```json\n[ { "symbol":"AAPL","headline":"Apple releases new iPhone model","snippet":"Apple unveiled...", "url":"…","datetime":"2025-04-25T10:00Z" }, … ]```                                                                            |
 
 ---
 
-## 2.2 Detailed API Endpoints
-
-### 2.2.1 Holdings / Transactions
-
-#### **GET /api/holdings**
-- **Description**: Retrieves the user's current stock holdings.
-- **Request Example**: No request payload.
-- **Response Example**:
-    ```json
-    [
-      {"symbol": "AAPL", "quantity": 10, "avgPrice": 145.20, "lastPrice": 150.30},
-      {"symbol": "MSFT", "quantity": 5, "avgPrice": 300.00, "lastPrice": 310.50}
-    ]
-    ```
-
-#### **POST /api/transactions**
-- **Description**: Record a stock transaction (buy/sell).
-- **Request Payload Example**:
-    ```json
-    {
-      "symbol": "AAPL",
-      "type": "BUY",
-      "quantity": 5,
-      "price": 155.00,
-      "date": "2025-04-27"
-    }
-    ```
-- **Response Example**:
-    ```json
-    {
-      "transaction": {
-        "symbol": "AAPL",
-        "type": "BUY",
-        "quantity": 5,
-        "price": 155.00,
-        "date": "2025-04-27"
-      },
-      "updatedHolding": {
-        "symbol": "AAPL",
-        "quantity": 15,
-        "avgPrice": 148.67
-      }
-    }
-    ```
-
-#### **DELETE /api/holdings/{symbol}**
-- **Description**: Remove a stock from the portfolio (or use POST with "SELL" type to reduce the holding).
-- **Request Example**: No request payload (symbol is in the URL).
-- **Response Example**:
-    ```json
-    {
-      "message": "Holding deleted successfully."
-    }
-    ```
-
----
-
-### 2.2.2 Portfolio Snapshot / Value History
-
-#### **GET /api/portfolio/value-history**
-- **Description**: Retrieve the history of the portfolio's total value over time for charting.
-- **Request Example**: No request payload.
-- **Response Example**:
-    ```json
-    [
-      {"date": "2025-04-20", "totalValue": 15000.00},
-      {"date": "2025-04-21", "totalValue": 15230.50},
-      {"date": "2025-04-27", "totalValue": 15510.75}
-    ]
-    ```
-
----
-
-### 2.2.3. Stock Data
-
-#### **GET /api/stocks/search?query={query}**
-- **Description**: Search for stocks using the Finnhub symbol lookup.
-- **Request Example**:
-    ```json
-    {"query": "AAPL"}
-    ```
-- **Response Example**:
-    ```json
-    [
-      {"symbol": "TSLA", "name": "Tesla Inc", "exchange": "NASDAQ"},
-      {"symbol": "AAPL", "name": "Apple Inc", "exchange": "NASDAQ"}
-    ]
-    ```
-
-#### **GET /api/stocks/{symbol}/history?range=1y**
-- **Description**: Fetch historical price data for a specific stock symbol.
-- **Request Example**: No request payload.
-- **Response Example**:
-    ```json
-    {
-      "symbol": "AAPL",
-      "history": [["2024-04-01", 170.0], ["2024-04-02", 172.5], ...]
-    }
-    ```
-
-#### **GET /api/stocks/{symbol}/stats**
-- **Description**: Retrieve stock statistics like market cap, P/E ratio, and sector.
-- **Request Example**: No request payload.
-- **Response Example**:
-    ```json
-    {
-      "symbol": "AAPL",
-      "marketCap": 2500000000000,
-      "peRatio": 28.4,
-      "sector": "Technology"
-    }
-    ```
-
----
-
-### 2.2.4. News Feed
-
-#### **GET /api/news**
-- **Description**: Retrieve the latest news headlines/snippets for all stocks in the user's portfolio.
-- **Request Example**: No request payload.
-- **Response Example**:
-    ```json
-    [
-      {"symbol": "AAPL", "headline": "Apple releases new iPhone model", "snippet": "Apple unveiled...", "url": "...", "datetime": "2025-04-25T10:00Z"},
-      {"symbol": "MSFT", "headline": "Microsoft reports record revenue", "snippet": "Microsoft Corp announced...", "url": "...", "datetime": "2025-04-25T11:00Z"}
-    ]
-    ```
-
----
-
-## 2.3. External Data Integration
+## 2.2. External Data Integration
 
 SmartStock relies on **Finnhub.io** for real-time financial data (stock quotes, historical prices, news) and **Yahoo Finance** (via **yfinance**) as a fallback when Finnhub’s quota is exceeded.
 
@@ -271,9 +144,78 @@ SmartStock relies on **Finnhub.io** for real-time financial data (stock quotes, 
 - **Ticker History**: `https://yfinance-api.com/v1/tickers/{symbol}/history`
 - **Stock Data**: Retrieved using the `yfinance` Python library.
 
---- 
 
 This concludes the API design for SmartStock’s stock tracking system. It simplifies the requirements to the essentials for a POC while integrating with external APIs to provide stock data and portfolio tracking features.
+
+--- 
+
+## 3. Operational Requirements
+
+### 3.1 Logging & Monitoring
+
+The SmartStock application **must** include a robust logging and monitoring framework to capture operational data and diagnose issues:
+
+- **Log Levels & Handlers**  
+  - **INFO**: Record all incoming HTTP requests (method, URL, user ID), cache hits/misses, and scheduled snapshot executions.  
+  - **WARNING**: Capture unexpected but recoverable conditions (e.g., API rate-limit warnings, partial data).  
+  - **ERROR**: Log all exceptions, external-API failures (endpoint, status code, response body), and transaction validation failures.  
+  - **Rotating File Handler**: Configure logs to roll over once the file reaches 10 MB, retaining at least 5 backup files.
+
+- **Structured Log Format**  
+  - Timestamp  
+  - Logger name  
+  - Severity level  
+  - Correlation ID (per incoming request)  
+  - Message and context (user ID, payload summary)
+
+- **Error Aggregation (Optional)**  
+  - Integrate with Sentry (DSN provided via environment variable) to capture uncaught exceptions and performance traces.
+
+- **Health Checks**  
+  - Expose a `/health` endpoint returning HTTP 200 when the application, database connection, and cache layer are operational.
+
+---
+
+### 3.2 Testing Strategy
+
+SmartStock **must** include both unit and integration test suites to verify business logic and end-to-end API behavior:
+
+- **Unit Tests**  
+  - Exercise core services in isolation (portfolio calculation, transaction validation, snapshot scheduler).  
+  - Use pytest’s fixtures and `sqlite:///:memory:` for an in-memory database.  
+  - Validate boundary cases (e.g., zero or negative share quantities, non-existent symbols).
+
+- **Integration Tests**  
+  - Issue HTTP requests against the live REST API (e.g., `GET /api/v1/holdings`, `POST /api/v1/transactions`) using Flask’s or Django’s test client.  
+  - Operate against a dedicated SQLite test database file (`test_finance.db`) that is created and torn down per test session.  
+  - Validate full request/response cycles, including database persistence.
+
+- **Test Coverage**  
+  - Aim for at least 80 % coverage on all core modules (services, controllers, data models).
+
+- **Continuous Verification**  
+  - Provide a `make test` or `npm test` command to execute all tests locally.  
+  - Include sample CI configuration (GitHub Actions or similar) to run tests on each commit.
+
+---
+
+## 3.3 Data Backup & Migrations
+
+- **Schema Migrations**  
+  - Employ Django’s built-in migration framework (or, if using SQLAlchemy, Alembic) to version and apply schema changes.  
+  - Each migration script must be checked into version control and synchronized across environments.
+
+- **Database Backups**  
+  - Implement a simple daily dump of the SQLite file:  
+    ```bash
+    sqlite3 finance.db ".dump" > backups/finance_$(date +%F).sql
+    ```  
+  - Retain a configurable number of backup files (e.g., 7 days).
+
+- **Recovery Procedures**  
+  - Document steps to restore from backup (e.g., loading `.sql` dump into a new SQLite file).
+
+---
 
 
 # Security Considerations
