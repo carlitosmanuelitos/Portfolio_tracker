@@ -3,6 +3,10 @@
 ## 1. Project Title
 SmartStock: Portfolio Tracker with Market Insights and AI Advisor
 
+== Background
+
+As part of the CS50 final project, SmartStock is designed as a web-first, locally hosted application aimed at individual investors seeking a simple, centralized platform for portfolio tracking, market insights, and AI-driven investment suggestions. The platform prioritizes free and open technologies, avoiding any reliance on paid APIs or external services. Existing solutions often require multiple apps or subscriptions, which SmartStock consolidates into a single, intuitive experience focused exclusively on the US stock market.
+
 ---
 
 ## 2. Executive Summary
