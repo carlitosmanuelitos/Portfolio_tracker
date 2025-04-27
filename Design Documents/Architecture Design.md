@@ -103,3 +103,174 @@ datastax.com For example, a simplified ERD might include tables Users, Holdings,
 Environment files are excluded from Git (`.gitignore`) for security purposes, ensuring sensitive data is not exposed in version control.
 
 ---
+
+
+# 2.0 Integration API Documentation
+
+SmartStock provides a simple portfolio tracking system with stock buy/sell functionality, portfolio value history, stock news aggregation, and external stock data integrations with **Finnhub** and **Yahoo Finance** (via **yfinance**).
+
+The API follows RESTful conventions and all responses use JSON.
+
+---
+
+## 2.1. Endpoints Overview
+
+| **Method** | **Endpoint**                          | **Description**                                                                                 | **Request Payload**                                                                                         | **Response Example**                                                                                                                                                                                               |
+|------------|---------------------------------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **GET**    | `/api/holdings`                       | Retrieve current stock holdings for the user.                                                     | None                                                                                                      | ```json [{"symbol": "AAPL", "quantity": 10, "avgPrice": 145.20, "lastPrice": 150.30}, {"symbol": "MSFT", "quantity": 5, "avgPrice": 300.00, "lastPrice": 310.50}]```                                                |
+| **POST**   | `/api/transactions`                   | Record a buy/sell transaction. Updates the user's holdings accordingly.                          | `{ "symbol": "AAPL", "type": "BUY", "quantity": 5, "price": 155.00, "date": "2025-04-27" }`                 | ```json { "transaction": { "symbol": "AAPL", "type": "BUY", "quantity": 5, "price": 155.00, "date": "2025-04-27" }, "updatedHolding": { "symbol": "AAPL", "quantity": 15, "avgPrice": 148.67 } }``` |
+| **DELETE** | `/api/holdings/{symbol}`              | Delete a holding by symbol or POST a sell transaction.                                           | None (symbol to delete in URL)                                                                             | ```json { "message": "Holding deleted successfully." }```                                                                                                                                 |
+| **GET**    | `/api/portfolio/value-history`        | Retrieve the portfolio value history for charting.                                                | None                                                                                                      | ```json [{"date": "2025-04-20", "totalValue": 15000.00}, {"date": "2025-04-21", "totalValue": 15230.50}, {"date": "2025-04-27", "totalValue": 15510.75}]```                                                        |
+| **GET**    | `/api/stocks/search?query={query}`     | Search for stocks by name or symbol (using Finnhub symbol lookup).                               | `{ "query": "AAPL" }`                                                                                      | ```json [{"symbol": "TSLA", "name": "Tesla Inc", "exchange": "NASDAQ"}, {"symbol": "AAPL", "name": "Apple Inc", "exchange": "NASDAQ"}]```                                                           |
+| **GET**    | `/api/stocks/{symbol}/history?range=1y`| Retrieve historical price data for a stock symbol (e.g., 1-year range).                           | None                                                                                                      | ```json { "symbol": "AAPL", "history": [["2024-04-01", 170.0], ["2024-04-02", 172.5], ...] }```                                                                 |
+| **GET**    | `/api/stocks/{symbol}/stats`          | Retrieve stock statistics such as market cap, P/E ratio, and sector.                             | None                                                                                                      | ```json { "symbol": "AAPL", "marketCap": 2500000000000, "peRatio": 28.4, "sector": "Technology" }```                                                         |
+| **GET**    | `/api/news`                           | Get the latest news headlines/snippets for all symbols in the user's portfolio.                  | None                                                                                                      | ```json [{ "symbol": "AAPL", "headline": "Apple releases new iPhone model", "snippet": "Apple unveiled...", "url": "...", "datetime": "2025-04-25T10:00Z" }, { "symbol": "MSFT", "headline": "Microsoft reports record revenue", "snippet": "Microsoft Corp announced...", "url": "...", "datetime": "2025-04-25T11:00Z" }]```|
+
+---
+
+## 2.2 Detailed API Endpoints
+
+### 2.2.1 Holdings / Transactions
+
+#### **GET /api/holdings**
+- **Description**: Retrieves the user's current stock holdings.
+- **Request Example**: No request payload.
+- **Response Example**:
+    ```json
+    [
+      {"symbol": "AAPL", "quantity": 10, "avgPrice": 145.20, "lastPrice": 150.30},
+      {"symbol": "MSFT", "quantity": 5, "avgPrice": 300.00, "lastPrice": 310.50}
+    ]
+    ```
+
+#### **POST /api/transactions**
+- **Description**: Record a stock transaction (buy/sell).
+- **Request Payload Example**:
+    ```json
+    {
+      "symbol": "AAPL",
+      "type": "BUY",
+      "quantity": 5,
+      "price": 155.00,
+      "date": "2025-04-27"
+    }
+    ```
+- **Response Example**:
+    ```json
+    {
+      "transaction": {
+        "symbol": "AAPL",
+        "type": "BUY",
+        "quantity": 5,
+        "price": 155.00,
+        "date": "2025-04-27"
+      },
+      "updatedHolding": {
+        "symbol": "AAPL",
+        "quantity": 15,
+        "avgPrice": 148.67
+      }
+    }
+    ```
+
+#### **DELETE /api/holdings/{symbol}**
+- **Description**: Remove a stock from the portfolio (or use POST with "SELL" type to reduce the holding).
+- **Request Example**: No request payload (symbol is in the URL).
+- **Response Example**:
+    ```json
+    {
+      "message": "Holding deleted successfully."
+    }
+    ```
+
+---
+
+### 2.2.2 Portfolio Snapshot / Value History
+
+#### **GET /api/portfolio/value-history**
+- **Description**: Retrieve the history of the portfolio's total value over time for charting.
+- **Request Example**: No request payload.
+- **Response Example**:
+    ```json
+    [
+      {"date": "2025-04-20", "totalValue": 15000.00},
+      {"date": "2025-04-21", "totalValue": 15230.50},
+      {"date": "2025-04-27", "totalValue": 15510.75}
+    ]
+    ```
+
+---
+
+### 2.2.3. Stock Data
+
+#### **GET /api/stocks/search?query={query}**
+- **Description**: Search for stocks using the Finnhub symbol lookup.
+- **Request Example**:
+    ```json
+    {"query": "AAPL"}
+    ```
+- **Response Example**:
+    ```json
+    [
+      {"symbol": "TSLA", "name": "Tesla Inc", "exchange": "NASDAQ"},
+      {"symbol": "AAPL", "name": "Apple Inc", "exchange": "NASDAQ"}
+    ]
+    ```
+
+#### **GET /api/stocks/{symbol}/history?range=1y**
+- **Description**: Fetch historical price data for a specific stock symbol.
+- **Request Example**: No request payload.
+- **Response Example**:
+    ```json
+    {
+      "symbol": "AAPL",
+      "history": [["2024-04-01", 170.0], ["2024-04-02", 172.5], ...]
+    }
+    ```
+
+#### **GET /api/stocks/{symbol}/stats**
+- **Description**: Retrieve stock statistics like market cap, P/E ratio, and sector.
+- **Request Example**: No request payload.
+- **Response Example**:
+    ```json
+    {
+      "symbol": "AAPL",
+      "marketCap": 2500000000000,
+      "peRatio": 28.4,
+      "sector": "Technology"
+    }
+    ```
+
+---
+
+### 2.2.4. News Feed
+
+#### **GET /api/news**
+- **Description**: Retrieve the latest news headlines/snippets for all stocks in the user's portfolio.
+- **Request Example**: No request payload.
+- **Response Example**:
+    ```json
+    [
+      {"symbol": "AAPL", "headline": "Apple releases new iPhone model", "snippet": "Apple unveiled...", "url": "...", "datetime": "2025-04-25T10:00Z"},
+      {"symbol": "MSFT", "headline": "Microsoft reports record revenue", "snippet": "Microsoft Corp announced...", "url": "...", "datetime": "2025-04-25T11:00Z"}
+    ]
+    ```
+
+---
+
+## 2.3. External Data Integration
+
+SmartStock relies on **Finnhub.io** for real-time financial data (stock quotes, historical prices, news) and **Yahoo Finance** (via **yfinance**) as a fallback when Finnhub’s quota is exceeded.
+
+### Finnhub API
+- **Stock Quotes**: `https://finnhub.io/api/v1/quote?symbol=GOOG`
+- **Company News**: `https://finnhub.io/api/v1/news?category=general`
+- **Historical Data**: `https://finnhub.io/api/v1/stock/candle?symbol=GOOG&resolution=D1&from=1609459200&to=1612137600`
+
+### Yahoo Finance (yfinance)
+- **Ticker History**: `https://yfinance-api.com/v1/tickers/{symbol}/history`
+- **Stock Data**: Retrieved using the `yfinance` Python library.
+
+--- 
+
+This concludes the API design for SmartStock’s stock tracking system. It simplifies the requirements to the essentials for a POC while integrating with external APIs to provide stock data and portfolio tracking features.
