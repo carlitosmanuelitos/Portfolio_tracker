@@ -1,64 +1,67 @@
 == Method
 
-The SmartStock system will be built as a three-tier architecture: a web frontend (presentation tier), a Django REST backend (application tier), and a lightweight SQLite database (data tier). It will integrate with external stock data providers (Finnhub as primary and yfinance as a fallback) and cache results to optimize performance and API call usage.
+The SmartStock system is designed as a three-tier architecture: a web frontend (presentation tier), a Django REST backend (application tier), and a lightweight SQLite database (data tier). It integrates with external stock data providers (Finnhub as primary and yfinance as a fallback), using caching to optimize performance and API usage.
 
 === System Overview
-[plantuml,system-overview,format=png]
-----
-@startuml
-actor User
-rectangle "SmartStock Web Frontend\n(React.js SPA)" {
-}
-rectangle "SmartStock API Backend\n(Django + Django REST Framework)" {
-}
-database "SQLite Database" {
-}
-rectangle "External Data Providers\n(Finnhub, yfinance)" {
-}
 
-User --> "SmartStock Web Frontend\n(React.js SPA)"
-"SmartStock Web Frontend\n(React.js SPA)" --> "SmartStock API Backend\n(Django + Django REST Framework)"
-"SmartStock API Backend\n(Django + Django REST Framework)" --> "SQLite Database"
-"SmartStock API Backend\n(Django + Django REST Framework)" --> "External Data Providers\n(Finnhub, yfinance)"
-@enduml
-----
+![System Overview](Design%20Documents/diagrams/png/system-overview.png)
+
+The platform consists of:
+- A React.js single-page application frontend
+- A Django REST Framework backend API
+- A local SQLite database for persistence
+- External APIs (Finnhub primary, yfinance fallback)
 
 === Backend Architecture
-- **Framework**: Django 4.x with Django REST Framework (DRF)
-- **Authentication**: Django built-in user authentication system (session-based)
-- **External Data Handling**:
-  - Primary stock and news data via **Finnhub** API.
-  - Fallback to **yfinance** when Finnhub is unavailable or limits exceeded.
-  - **Caching** of API responses (simple in-memory or Django cache system).
-- **Environment Variables**: API keys and secrets managed via `.env` files loaded by Django.
-- **Database**: SQLite3 for development and local hosting, maintaining portability and simplicity.
-- **AI Advisor Module**: Rule-based diversification tips, concentration alerts, and opportunity prompts. Query OpenAI API with a custom prompt including the user's holdings snapshot to provide suggestions.
 
-=== Frontend Architecture
-- **Framework**: React.js 18+ (with React Router)
-- **Design System**: Minimalist, clean ("Apple-like"), using TailwindCSS or Material-UI for fast and consistent styling.
-- **Charts**: Recharts (React wrapper over D3.js) or Chart.js.
-- **Navigation**: Single-page layout with sections: Dashboard / Portfolio / Market / News / AI Advisor.
-- **API Communication**: Axios for HTTP calls to Django backend.
+![Component Architecture](Design%20Documents/diagrams/png/component-architecture.png)
+
+Key Backend Components:
+- **Authentication Module**: Django’s session-based user authentication
+- **Portfolio Service**: Manages holdings, transactions, and portfolio valuation
+- **Stock Service**: Fetches stock data and news from external APIs with caching
+- **News Service**: Aggregates news related to the user's portfolio
+- **AI Advisor Module**: Provides simple diversification and opportunity tips by summarizing holdings through OpenAI
+
+=== Database Schema
+
+![Database Schema](Design%20Documents/diagrams/png/database-schema.png)
+
+Database Tables:
+- **User**: Authentication and profile data
+- **Holding**: Current user holdings linked to stocks
+- **Transaction**: Buy/sell records
+- **Snapshot**: Daily portfolio value records
+- **Stock**: Cached static data about stocks
 
 === Local Hosting & Dependency Management
-- **Python Environment**: Poetry for Python dependency management.
-- **Frontend Environment**: npm / yarn for managing React dependencies.
-- **Running the App**:
-  1. Clone the repository.
-  2. Set up the Python virtual environment via Poetry.
-  3. Set up Node environment and install React app dependencies.
-  4. Run Django backend (`poetry run python manage.py runserver`).
-  5. Run React frontend (`npm start`).
-  6. Both frontend and backend run locally, communicating via different ports (e.g., 3000 frontend, 8000 backend).
-  
-=== Environment Variables
-- `.env` file in the Django project root.
-- Recommended keys:
-  - `FINNHUB_API_KEY`
-  - `OPENAI_API_KEY`
-  - `SECRET_KEY` (Django secret)
-  - `DEBUG`
-  - `ALLOWED_HOSTS`
-- Usage: Load using `django-environ` or `python-decouple` for minimal complexity and better security.
 
+- **Python Environment**: Managed with **Poetry** for virtualenvs and dependencies.
+- **Frontend Environment**: Managed with **npm** or **yarn**.
+- **Running Locally**:
+  1. Clone the repository.
+  2. Set up backend:
+      ```bash
+      cd backend
+      poetry install
+      poetry run python manage.py migrate
+      poetry run python manage.py runserver
+      ```
+  3. Set up frontend:
+      ```bash
+      cd frontend
+      npm install
+      npm start
+      ```
+  4. Frontend (port 3000) and Backend (port 8000) run independently, communicating over REST APIs.
+
+=== Environment Variables
+
+Environment variables are managed using a `.env` file and loaded with `django-environ`:
+- `FINNHUB_API_KEY` - API Key for Finnhub
+- `OPENAI_API_KEY` - API Key for OpenAI (used by AI Advisor)
+- `SECRET_KEY` - Django secret key
+- `DEBUG` - Debug flag (`True`/`False`)
+- `ALLOWED_HOSTS` - List of allowed hosts (localhost during development)
+
+Environment files are excluded from Git (`.gitignore`) to protect secrets.
