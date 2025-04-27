@@ -105,7 +105,7 @@ Environment files are excluded from Git (`.gitignore`) for security purposes, en
 ---
 
 
-# 2.0 Integration API Documentation
+## 2.0 Integration API Documentation
 
 SmartStock provides a simple portfolio tracking system with stock buy/sell functionality, portfolio value history, stock news aggregation, and external stock data integrations with **Finnhub** and **Yahoo Finance** (via **yfinance**).
 
